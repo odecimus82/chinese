@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>荷塘月色 - 掌上复习课</title>
+    <style>
+        :root {
+            --primary-color: #e0e5ec; /* 月光白 */
+            --bg-color: #1a2a3a; /* 荷塘夜色深蓝 */
+            --card-bg: #2c3e50;
+            --accent-color: #00d2d3; /* 荷叶青绿 */
+            --text-color: #ecf0f1;
+            --highlight: #f1c40f;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            padding-bottom: 70px; /* 为底部导航留空 */
+        }
+
+        /* 顶部 Header */
+        header {
+            background: linear-gradient(180deg, #0f1c29 0%, #1a2a3a 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; font-weight: normal; letter-spacing: 2px; }
+        .subtitle { font-size: 0.9rem; color: #bdc3c7; margin-top: 5px; }
+
+        /* 内容区域 */
+        .container {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            display: none; /* 默认隐藏，通过JS控制显示 */
+            animation: fadeIn 0.5s;
+        }
+
+        .container.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 卡片样式 */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            background: rgba(0, 210, 211, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* 重点动词点击交互 */
+        .interactive-word {
+            border-bottom: 2px dashed var(--highlight);
+            cursor: pointer;
+            color: var(--highlight);
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .interactive-word::after {
+            content: "👆点我解析";
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            background: #000;
+            padding: 2px 4px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+
+        .interactive-word:hover::after { opacity: 1; }
+
+        /* 结构图样式 */
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .step-num {
+            background: var(--accent-color);
+            color: #000;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.8rem;
+        }
+
+        /* 填空题样式 */
+        .quiz-box {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        select {
+            background: #1a2a3a;
+            color: white;
+            border: 1px solid var(--accent-color);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .feedback {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        .correct { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #0f1c29;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: #7f8c8d;
+            text-align: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .nav-item.active {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .nav-icon {
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* 模态框 (解析) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 400px;
+            position: relative;
+            border: 1px solid var(--accent-color);
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>荷塘月色</h1>
+        <div class="subtitle">高一语文 · 课文复习助手</div>
+    </header>
+
+    <!-- 模块1：文章脉络 -->
+    <div id="section-structure" class="container active">
+        <div class="card">
+            <div class="card-title">
+                <span>📖 整体感知</span>
+                <span class="tag">结构</span>
+            </div>
+            <p><strong>文眼：</strong>“这几天心里颇不宁静”</p>
+            <p><strong>线索：</strong>游踪（出门 -> 漫步 -> 回家）</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">逻辑脉络图</div>
+            <div class="flow-step">
+                <div class="step-num">1</div>
+                <div><strong>缘起：</strong> 颇不宁静，独游荷塘 <br><span style="font-size:0.8rem;color:#95a5a6;">(想寻宁静)</span></div>
+            </div>
+            <div class="flow-step">
+                <div class="step-num">2</div>
+                <div><strong>主体：</strong> 荷塘月色，月下荷塘 <br><span style="font-size:0.8rem;color:#95a5a6;">(暂得宁静 - 重点背诵)</span></div>
+            </div>
+            <div class="flow-step">
+                <div class="step-num">3</div>
+                <div><strong>尾声：</strong> 惦念江南，回归现实 <br><span style="font-size:0.8rem;color:#95a5a6;">(失掉宁静)</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模块2：重点赏析 -->
+    <div id="section-analysis" class="container">
+        <div class="card">
+            <div class="card-title">
+                <span>🌙 炼字：月光之动</span>
+                <span class="tag">点击词语看解析</span>
+            </div>
+            <p>月光如流水一般，静静地 <span class="interactive-word" onclick="showModal('泻', '“泻”字化静为动，写出了月光的流动感，也暗示了月光的清澈与明亮。相比“照”字，更具动感和质感。')">泻</span> 在这一片叶子和花上。</p>
+            <p>薄薄的青雾 <span class="interactive-word" onclick="showModal('浮', '“浮”字轻盈，写出了雾气的飘渺与轻柔，与“薄薄”相呼应，营造出朦胧的意境。')">浮</span> 起在荷塘里。</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>🎨 修辞：通感（移觉）</span>
+                <span class="tag">难点</span>
+            </div>
+            <p><strong>原句：</strong>“微风过处，送来缕缕清香，仿佛远处高楼上渺茫的歌声似的。”</p>
+            <hr style="border-color:rgba(255,255,255,0.1)">
+            <p><strong>解析：</strong>将嗅觉（清香）转化为听觉（歌声）。</p>
+            <ul>
+                <li>清香：断断续续、若有若无</li>
+                <li>歌声：隐隐约约、渺茫</li>
+            </ul>
+            <p>两者在<strong>“断续、隐约”</strong>的特点上是相通的。</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">
+                <span>💃 修辞：比喻与拟人</span>
+            </div>
+            <p><strong>比喻：</strong>“叶子出水很高，像亭亭的舞女的裙。”（写出荷叶的风姿）</p>
+            <p><strong>拟人：</strong>“有羞涩地打着朵儿的。”（赋予荷花以人的神态，写出含苞待放的娇美）</p>
+        </div>
+    </div>
+
+    <!-- 模块3：闯关练习 -->
+    <div id="section-practice" class="container">
+        <div class="card">
+            <div class="card-title">
+                <span>✍️ 动词填空挑战</span>
+                <span class="tag">实战</span>
+            </div>
+            <p>请选择最恰当的动词填入括号中：</p>
+            
+            <div class="quiz-box">
+                <p>1. 月光如流水一般，静静地 ( <select id="q1"><option value="">?</option><option value="照">照</option><option value="泻">泻</option><option value="铺">铺</option></select> ) 在这一片叶子和花上。</p>
+                <div id="f1" class="feedback"></div>
+            </div>
+
+            <div class="quiz-box">
+                <p>2. 弯弯的杨柳的稀疏的倩影，却又像是 ( <select id="q2"><option value="">?</option><option value="画">画</option><option value="印">印</option><option value="刻">刻</option></select> ) 在荷叶上。</p>
+                <div id="f2" class="feedback"></div>
+            </div>
+            
+            <div class="quiz-box">
+                <p>3. 这是一个 ( <select id="q3"><option value="">?</option><option value="安静">安静</option><option value="热闹">热闹</option><option value="繁华">繁华</option></select> ) 的季节，也是一个宁静的季节。</p>
+                <div id="f3" class="feedback"></div>
+            </div>
+
+            <button onclick="checkAnswers()" style="width:100%; margin-top:15px; padding:10px; background:var(--accent-color); border:none; border-radius:8px; font-weight:bold; cursor:pointer;">提交答案</button>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('structure', this)">
+            <span class="nav-icon">📑</span>
+            脉络
+        </div>
+        <div class="nav-item" onclick="switchTab('analysis', this)">
+            <span class="nav-icon">🔍</span>
+            赏析
+        </div>
+        <div class="nav-item" onclick="switchTab('practice', this)">
+            <span class="nav-icon">🎮</span>
+            练习
+        </div>
+    </nav>
+
+    <!-- 弹窗 -->
+    <div id="modal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title" style="color:var(--accent-color); margin-top:0;"></h3>
+            <p id="modal-text"></p>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签页
+        function switchTab(tabId, navElement) {
+            // 隐藏所有内容
+            document.querySelectorAll('.container').forEach(el => el.classList.remove('active'));
+            // 显示目标内容
+            document.getElementById('section-' + tabId).classList.add('active');
+            
+            // 更新导航栏状态
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            navElement.classList.add('active');
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+
+        // 显示解析弹窗
+        function showModal(title, text) {
+            document.getElementById('modal-title').innerText = '“' + title + '” 字赏析';
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // 检查答案
+        function checkAnswers() {
+            const answers = {
+                q1: '泻',
+                q2: '画',
+                q3: '热闹'
+            };
+            
+            const explanations = {
+                q1: '“泻”字表现了月光的流动感与充沛。',
+                q2: '“画”字写出了光影仿佛经过人为构思的美感。',
+                q3: '蝉声与蛙声是“热闹”的，反衬出作者内心的不宁静。'
+            };
+
+            let score = 0;
+
+            for (let key in answers) {
+                const userVal = document.getElementById(key).value;
+                const feedbackEl = document.getElementById(key.replace('q', 'f'));
+                feedbackEl.style.display = 'block';
+                
+                if (userVal === answers[key]) {
+                    feedbackEl.innerHTML = '<span class="correct">✅ 回答正确！</span> ' + explanations[key];
+                    score++;
+                } else {
+                    feedbackEl.innerHTML = '<span class="wrong">❌ 答案是“' + answers[key] + '”。</span> ' + explanations[key];
+                }
+            }
+            
+            if(score === 3) {
+                alert("太棒了！全对！🎉");
+            }
+        }
+    </script>
+</body>
+</html>
